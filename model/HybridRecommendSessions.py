@@ -19,7 +19,7 @@ def recommend_sessions_hybrid(user_id, user_similarity_df, session_similarity_df
         user_item_matrix = pd.concat([user_item_matrix, new_user_row])
     
     logging.debug(f"user_similarity_df 데이터 확인 : \n{user_similarity_df.loc[user_id].sort_values(ascending=False).head(5)}")
-    logging.debug(f"session_similarity_df 데이터 확인 : \n{session_similarity_df.loc[2].sort_values(ascending=False).head(11)}")
+    logging.debug(f"session_similarity_df 데이터 확인 : \n{session_similarity_df.loc[user_id].sort_values(ascending=False).head(11)}")
 
     # 사용자가 등록한 세션
     user_sessions = user_item_matrix.loc[user_id] 
