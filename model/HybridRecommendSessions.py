@@ -35,7 +35,6 @@ def recommend_sessions_hybrid(user_id, user_similarity_df, session_similarity_df
     # 아이템 기반 협업 필터링
     similar_sessions = session_similarity_df.loc[liked_sessions].sum().sort_values(ascending=False)
 
-    # 행동 기반 추천 (내가 좋아한 세션을 좋아한 유저들이 좋아한 세션 추천)
     users_liked_my_sessions = user_item_matrix[user_item_matrix[liked_sessions].sum(axis=1) > 0]
 
     user_sim_scores = user_similarity_df.loc[user_id, users_liked_my_sessions.index]
