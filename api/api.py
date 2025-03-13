@@ -44,7 +44,11 @@ def update_data():
         except Exception as e:
             print(f"데이터 갱신 중 오류 발생: {e}")
 
-        time.sleep(1800)  # 30분마다 실행
+        time.sleep(600)  # 10분마다 실행
+
+# 서버 시작시 자동으로 데이터갱신 스레드 실행
+thread = threading.Thread(target=update_data, daemon=True)
+thread.start()
 
 @app.get("/recommend")
 async def recommend(user_id: int = Query(..., description="사용자 ID")):
