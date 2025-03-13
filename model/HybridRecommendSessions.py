@@ -25,7 +25,7 @@ def recommend_sessions_hybrid(user_id, user_similarity_df, session_similarity_df
     user_sessions = user_item_matrix.loc[user_id] 
     liked_sessions = user_sessions[user_sessions > 0].index.tolist()
 
-    # 사용자 기반 협업 필터링 (비슷한 유저들의 세션 가중치를 조정)
+    # 사용자 기반 협업 필터링
     similar_users = user_similarity_df.loc[user_id].drop(user_id)
     top_similar_users = similar_users.sort_values(ascending=False).head(5)
 
@@ -37,9 +37,9 @@ def recommend_sessions_hybrid(user_id, user_similarity_df, session_similarity_df
 
     users_liked_my_sessions = user_item_matrix[user_item_matrix[liked_sessions].sum(axis=1) > 0]
 
-    user_sim_scores = user_similarity_df.loc[user_id, users_liked_my_sessions.index]
-    weighted_sessions = (user_item_matrix.loc[users_liked_my_sessions.index].T * user_sim_scores.values).T
-    expanded_sessions = weighted_sessions.mean()
+    user_sim_scores = user_similarity_df.loc[user_id, users_liked_my_sessions.index] #내가 좋아요한 세션을 좋아요한 유저와 나의 유사도
+    weighted_sessions = (user_item_matrix.loc[users_liked_my_sessions.index].T * user_sim_scores.values).T #유사도 가중치
+    expanded_sessions = weighted_sessions.mean() # 최종추천세션 점수계산
 
     # 최종 추천 가중치 조정
     final_recommendations = ((0.5 * similar_users_sessions) + (0.1 * similar_sessions) + (0.4 * expanded_sessions)).sort_values(ascending=False)
