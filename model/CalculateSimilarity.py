@@ -17,6 +17,7 @@ def calculate_similarity(users, sessions, my_sessions, tags):
     user_features = hstack([text_features, years_scaled])
     user_similarity_df = pd.DataFrame(cosine_similarity(user_features), index=users['user_id'], columns=users['user_id'])
 
+    # 컨텐츠 기반 필터링
     # 세션별 유사도 계산
     tags_grouped = tags.groupby("session_id").agg({
         "field": lambda x: " ".join(x.dropna().unique()),
@@ -26,7 +27,7 @@ def calculate_similarity(users, sessions, my_sessions, tags):
     }).reset_index()
 
     # 레벨을 숫자로 매핑
-    level_mapping = {'I': 1, 'A': 2, 'B': 3}
+    level_mapping = {'B': 1, 'I': 2, 'A': 3} # Beginner, Intermediate, Advanced -> 수정가능
     tags_grouped['level_numeric'] = tags_grouped['level'].map(level_mapping).fillna(0)
 
     # 태그 생성
