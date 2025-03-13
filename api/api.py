@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 import pymysql
 import threading
 import time
+import logging
 import pandas as pd
 
 from model.CalculateSimilarity import calculate_similarity
@@ -37,13 +38,11 @@ def update_data():
     
     while True:
         try:
-            print("데이터 갱신 중")
             users, sessions, my_sessions, tags = load_data()
             user_similarity_df, session_similarity_df, user_item_matrix = calculate_similarity(users, sessions, my_sessions, tags)
-            print("데이터 갱신 완료")
+            logging.info("데이터 갱신 완료")
         except Exception as e:
-            print(f"데이터 갱신 중 오류 발생: {e}")
-
+            logging.error("데이터 갱신 중 오류 발생")
         time.sleep(600)  # 10분마다 실행
 
 # 서버 시작시 자동으로 데이터갱신 스레드 실행
