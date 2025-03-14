@@ -57,4 +57,41 @@ async def recommend(user_id: int = Query(..., description="사용자 ID")):
 
     recommended_sessions = recommend_sessions_hybrid(user_id, user_similarity_df, session_similarity_df, user_item_matrix, top_n=5)
 
-    return JSONResponse(content={"user_id": user_id, "recommended_sessions": recommended_sessions})
+    session_details = get_info_by_db(recommended_sessions)
+
+    # 응답데이터 구성
+    response_data = {
+        "user_id": user_id,
+        "recommended_sessions": session_details
+    }
+    
+    return JSONResponse(content=response_data)
+
+def get_info_by_db(session_ids):
+    """세션 ID 리스트를 기반으로 세션 정보를 가져오는 함수"""
+    if not session_ids:
+        return {}
+
+    conn = get_db_connection()
+    try:
+        # 여러 세션정보를 한 번에 가져옴
+        format_strings = ','.join(['%s'] * len(session_ids))
+        query = f"""
+            SELECT session_id, title, session_image, summary, start_time, end_time 
+            FROM sessions 
+            WHERE session_id IN ({format_strings})
+        """
+        with conn.cursor(pymysql.cursors.DictCursor) as cursor:
+            cursor.execute(query, tuple(session_ids))
+            session_info = cursor.fetchall()
+    finally:
+        conn.close()
+
+    # session_id를 키로 하고 나머지 정보를 값으로 하는 딕셔너리 생성
+    return {session["session_id"]: {
+        "title": session["title"],
+        "session_image": session["session_image"],
+        "summary": session["summary"],
+        "start_time": session["start_time"].strftime("%Y-%m-%d %H:%M:%S") if session["start_time"] else None,
+        "end_time": session["end_time"].strftime("%Y-%m-%d %H:%M:%S") if session["end_time"] else None
+    } for session in session_info}
