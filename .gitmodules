@@ -1,0 +1,3 @@
+[submodule "api/jwt_module"]
+	path = api/jwt_module
+	url = https://github.com/FiT-8-plus-1-BiT/be_sub_module_yml.git

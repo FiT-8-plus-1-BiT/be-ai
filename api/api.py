@@ -5,41 +5,43 @@ import threading
 import time
 import logging
 import pandas as pd
+from config_loader import load_config
+from sqlalchemy import create_engine
 
 from model.CalculateSimilarity import calculate_similarity
 from model.HybridRecommendSessions import recommend_sessions_hybrid
 
 app = FastAPI()
 
-def get_db_connection():
-    return pymysql.connect(
-        host='localhost',
-        port=3306,
-        user='fit',
-        password='fit1234!',
-        db='fit',
-        ssl={'ssl': {}}
+config = load_config("local")
+secret = config["spring"]["jwt"]["access-secret-key"]
+db_config = config["spring"]["datasource"]
+
+
+def get_db_engine():
+    return create_engine(
+        f"mysql+pymysql://{db_config['username']}:{db_config['password']}@{db_config['host']}:{db_config['port']}/{db_config['name']}"
     )
 
 def load_data():
-    conn = get_db_connection()
-    
-    users = pd.read_sql_query("SELECT * FROM users", conn)
-    sessions = pd.read_sql_query("SELECT * FROM sessions", conn)
-    my_sessions = pd.read_sql_query("SELECT * FROM my_sessions", conn)
-    tags = pd.read_sql_query("SELECT * FROM tags", conn)
+    engine = get_db_engine()
 
-    conn.close()
-    return users, sessions, my_sessions, tags
+    users = pd.read_sql("SELECT * FROM users", engine)
+    sessions = pd.read_sql("SELECT * FROM sessions", engine)
+    my_session = pd.read_sql("SELECT * FROM my_session", engine)
+    tags = pd.read_sql("SELECT * FROM tags", engine)
+    interests = pd.read_sql("SELECT * FROM interests", engine)
+
+    return users, sessions, my_session, tags, interests
 
 def update_data():
-    global users, sessions, my_sessions, tags
+    global users, sessions, my_session, tags
     global user_similarity_df, session_similarity_df, user_item_matrix
     
     while True:
         try:
-            users, sessions, my_sessions, tags = load_data()
-            user_similarity_df, session_similarity_df, user_item_matrix = calculate_similarity(users, sessions, my_sessions, tags)
+            users, sessions, my_session, tags = load_data()
+            user_similarity_df, session_similarity_df, user_item_matrix = calculate_similarity(users, sessions, my_session, tags)
             logging.info("데이터 갱신 완료")
         except Exception as e:
             logging.error("데이터 갱신 중 오류 발생")
@@ -51,9 +53,9 @@ thread.start()
 
 @app.get("/recommend")
 async def recommend(user_id: int = Query(..., description="사용자 ID")):
-    users, sessions, my_sessions, tags = load_data()
+    users, sessions, my_session, tags, interests = load_data()
     
-    user_similarity_df, session_similarity_df, user_item_matrix = calculate_similarity(users, sessions, my_sessions, tags)
+    user_similarity_df, session_similarity_df, user_item_matrix = calculate_similarity(users, sessions, my_session, tags, interests)
 
     recommended_sessions = recommend_sessions_hybrid(user_id, user_similarity_df, session_similarity_df, user_item_matrix, top_n=5)
 
